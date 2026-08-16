@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ast-pruner — Token Savings Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #0d1117; color: #e6edf3; margin: 0; padding: 2rem;
+  }
+  h1 { margin: 0 0 0.25rem 0; font-size: 1.75rem; }
+  .subtitle { color: #8b949e; margin-bottom: 2rem; }
+  .hero {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 1.25rem;
+  }
+  .stat-value { font-size: 1.75rem; font-weight: 600; color: #58a6ff; }
+  .stat-label { font-size: 0.8rem; color: #8b949e; text-transform: uppercase;
+                 letter-spacing: 0.04em; margin-top: 0.25rem; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .card {
+    background: #161b22; border: 1px solid #30363d; border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .card h2 { margin: 0 0 1rem 0; font-size: 1rem; color: #c9d1d9; }
+  .empty { text-align: center; color: #8b949e; padding: 3rem; }
+  canvas { max-height: 280px; }
+</style>
+</head>
+<body>
+
+<h1>ast-pruner — Token Savings Dashboard</h1>
+<div class="subtitle">Generated 2026-06-02 14:33:38 · How much LLM context you've avoided sending</div>
+
+<div id="root"></div>
+
+<script>
+const data = {"total_invocations": 14, "total_baseline_tokens": 152233, "total_pruned_tokens": 11303, "total_tokens_saved": 140930, "avg_reduction_pct": 50.91, "top_files": [["../React-food-delivery-app/src/pages/Home.jsx", 127045], ["../React-food-delivery-app/src/components/Footer/Footer.jsx", 3993], ["../React-food-delivery-app/src/routes/Routers.js", 2440], ["../React-food-delivery-app/src/pages/PizzaDetails.jsx", 1679], ["../React-food-delivery-app/src/components/Layout/Layout.js", 1309], ["../React-food-delivery-app/src/pages/Cart.jsx", 1151], ["../React-food-delivery-app/src/components/UI/product-card/ProductCard.jsx", 1067], ["../React-food-delivery-app/src/store/shopping-cart/cartSlice.js", 968], ["../React-food-delivery-app/src/components/UI/cart/Carts.jsx", 698], ["../React-food-delivery-app/src/pages/Pizzas.jsx", 472]], "cumulative_series": [["2026-06-01", 140930]], "reduction_histogram": {"0-10": 4, "10-20": 1, "20-30": 0, "30-40": 1, "40-50": 0, "50-60": 0, "60-70": 2, "70-80": 3, "80-90": 0, "90-100": 3}};
+
+const root = document.getElementById("root");
+
+if (data.total_invocations === 0) {
+  root.innerHTML = '<div class="empty">No usage logged yet. Try invoking <code>@pruner</code> in Copilot Chat first.</div>';
+} else {
+  const fmt = (n) => n.toLocaleString();
+
+  root.innerHTML = `
+    <div class="hero">
+      <div class="stat">
+        <div class="stat-value">${fmt(data.total_tokens_saved)}</div>
+        <div class="stat-label">Tokens saved (lifetime)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${data.total_invocations}</div>
+        <div class="stat-label">Times invoked</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${data.avg_reduction_pct}%</div>
+        <div class="stat-label">Average reduction</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">${fmt(data.total_baseline_tokens)}</div>
+        <div class="stat-label">Baseline (if unpruned)</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card"><h2>Cumulative tokens saved over time</h2><canvas id="cumChart"></canvas></div>
+      <div class="card"><h2>Top files by tokens saved</h2><canvas id="topChart"></canvas></div>
+      <div class="card"><h2>Baseline vs Pruned (totals)</h2><canvas id="ratioChart"></canvas></div>
+      <div class="card"><h2>Reduction % distribution</h2><canvas id="histChart"></canvas></div>
+    </div>
+  `;
+
+  const palette = ["#58a6ff", "#3fb950", "#d29922", "#f85149", "#bc8cff"];
+  Chart.defaults.color = "#8b949e";
+  Chart.defaults.borderColor = "#30363d";
+
+  new Chart(document.getElementById("cumChart"), {
+    type: "line",
+    data: {
+      labels: data.cumulative_series.map(x => x[0]),
+      datasets: [{
+        label: "Cumulative tokens saved",
+        data: data.cumulative_series.map(x => x[1]),
+        borderColor: palette[0], backgroundColor: palette[0] + "33",
+        fill: true, tension: 0.3,
+      }],
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } },
+  });
+
+  new Chart(document.getElementById("topChart"), {
+    type: "bar",
+    data: {
+      labels: data.top_files.map(x => x[0].split("/").slice(-2).join("/")),
+      datasets: [{
+        label: "Tokens saved",
+        data: data.top_files.map(x => x[1]),
+        backgroundColor: palette[1],
+      }],
+    },
+    options: { indexAxis: "y", responsive: true,
+                plugins: { legend: { display: false } } },
+  });
+
+  new Chart(document.getElementById("ratioChart"), {
+    type: "doughnut",
+    data: {
+      labels: ["Pruned (sent)", "Saved (not sent)"],
+      datasets: [{
+        data: [data.total_pruned_tokens, data.total_tokens_saved],
+        backgroundColor: [palette[3], palette[1]],
+      }],
+    },
+    options: { responsive: true },
+  });
+
+  new Chart(document.getElementById("histChart"), {
+    type: "bar",
+    data: {
+      labels: Object.keys(data.reduction_histogram),
+      datasets: [{
+        label: "Invocations",
+        data: Object.values(data.reduction_histogram),
+        backgroundColor: palette[2],
+      }],
+    },
+    options: { responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: { title: { display: true, text: "Reduction %" } } } },
+  });
+}
+</script>
+</body>
+</html>

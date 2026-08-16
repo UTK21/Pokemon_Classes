@@ -1,0 +1,74 @@
+{
+  "name": "ast-pruner",
+  "displayName": "AST Pruner",
+  "description": "Semantically prune code files to reduce Copilot context token usage. Use @pruner in Copilot Chat.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "activationEvents": [
+    "onChatParticipant:ast-pruner.pruner"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "ast-pruner.pruner",
+        "fullName": "AST Pruner",
+        "name": "pruner",
+        "description": "Pipe pruned file context into Copilot Chat",
+        "isSticky": false,
+        "commands": [
+          {
+            "name": "dashboard",
+            "description": "Show the token savings dashboard"
+          }
+        ]
+      }
+    ],
+    "commands": [
+      {
+        "command": "ast-pruner.showDashboard",
+        "title": "AST Pruner: Show Savings Dashboard"
+      },
+      {
+        "command": "ast-pruner.openLog",
+        "title": "AST Pruner: Open Usage Log"
+      }
+    ],
+    "configuration": {
+      "title": "AST Pruner",
+      "properties": {
+        "ast-pruner.cliPath": {
+          "type": "string",
+          "default": "ast-pruner",
+          "description": "Path to the ast-pruner CLI binary. Defaults to looking it up on PATH."
+        },
+        "ast-pruner.defaultDepth": {
+          "type": "number",
+          "default": 3,
+          "description": "Default import recursion depth when pruning."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "node esbuild.config.mjs",
+    "watch": "node esbuild.config.mjs --watch",
+    "package": "node esbuild.config.mjs && vsce package --allow-missing-repository --skip-license",
+    "vscode:prepublish": "node esbuild.config.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.5.0"
+  }
+}

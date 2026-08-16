@@ -1,0 +1,36 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ast-pruner"
+version = "0.1.0"
+description = "Semantically prune source code files to reduce LLM context token count"
+requires-python = ">=3.9"
+readme = "README.md"
+license = { text = "MIT" }
+
+dependencies = [
+    "tree-sitter>=0.23.0,<0.24",
+    "tree-sitter-python>=0.23.0,<0.24",
+    "tree-sitter-javascript>=0.23.0,<0.24",
+    "tree-sitter-typescript>=0.23.0,<0.24",
+    "click>=8.1.0",
+]
+
+[project.optional-dependencies]
+tokens = ["tiktoken>=0.6.0"]
+dev = ["pytest>=8.0", "pytest-cov", "ruff", "mypy"]
+
+[project.scripts]
+ast-pruner = "ast_pruner.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ast_pruner"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"

@@ -14,7 +14,7 @@ For a deeper walkthrough of what each file in this project does, see [EXPLANATIO
 
 ```bash
 # 1. Install the CLI globally
-pipx install /path/to/AST_PRUNER
+pipx install /path/to/AST_PRUNERV
 
 # 2. Prune a single file (writes pruned source to stdout)
 ast-pruner prune src/components/Header.jsx
